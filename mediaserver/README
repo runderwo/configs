@@ -1,0 +1,18 @@
+import-local.js: Hacked up MediaTomb import js which cleans up torrent
+filenames and re-paths files for personal convenience.  Diff it against the
+upstream import.js to see what changed.
+
+mediatomb-ceac13-transcoder: Hacked up version of a transcoding script I found
+elsewhere on the net.  This is used on a HP N54L Microserver.  Should be cleaned
+up once subtitles are fully working.
+
+config.xml: MediaTomb config.xml which uses the custom import and transcode
+scripts from above.
+
+launch_vuze.sh: Script to launch Vuze in an isolated network namespace which
+can only reach the Internet via an I2P router and the Orchid plugin.  This
+should prevent any leakage of the real IP address to swarms or the outside
+world in general.  Note that aside from I2P DHT, your torrents will only be
+able to use HTTP and HTTPS trackers (which are scraped via Tor).  You can get
+an up-to-date list here: https://github.com/ngosang/trackerslist
+In this config Vuze is controlled via connecting to a virtual X server.
