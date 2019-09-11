@@ -45,6 +45,11 @@ case ${extension} in
 			echo ${subargs}
 		fi
 		;;
+	.iso)
+		# Enable this when HandBrake can transcode to webm: https://github.com/HandBrake/HandBrake/issues/388
+		# exec HandBrakeCLI -Z 'Chromecast 1080p30 Surround' -i $1 -o /dev/stdout
+		;;
+
 esac
 # Other container formats have separate subtitle files.
 # TODO

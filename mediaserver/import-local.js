@@ -164,7 +164,7 @@ function addVideoDefault(obj)
 
 function addVideo(obj)
 {
-    // Special treatment for Azureus download folder.
+    // Special treatment for Azureus-managed download folders.
     if (obj.location.indexOf("/btdone/") != -1) {
         var chain = new Array('Video', 'Torrents');
         var dir = obj.location.split('/');
@@ -173,10 +173,10 @@ function addVideo(obj)
         }
         dir.shift();
 
-        // Ignore nuisance bracketed prefixes on torrented dirs.
+        // Squash nuisance bracketed prefixes on torrented dirs.
         dir[0] = dir[0].replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
 
-        // Ignore nuisance bracketed prefixes on torrented files and UPNP metadata.
+        // Squash nuisance bracketed prefixes on torrented files and UPNP metadata.
         dir[1] = dir[1].replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
         obj.title = obj.title.replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
         
@@ -188,18 +188,19 @@ function addVideo(obj)
         addCdsObject(obj, createContainerChain(chain));
 
     } else if (obj.location.indexOf("/bttmp/") != -1) {
-        // Ignore incomplete downloads.
+        // Ignore incomplete Azureus downloads.
         return;
     }
-    // Special treatment for /mnt/media.
-    else if (obj.location.indexOf("/mnt/media/") != -1) {
+    // Special treatment for anything non-Azureus-managed under /srv/media.
+    else if (obj.location.indexOf("/srv/media") != -1) {
         var chain = new Array('Video', 'Media Server');
         var dir = obj.location.split('/');
-        while (dir[0] != 'mnt' && dir[1] != 'media') {
+        while (dir[0] != 'srv' && dir[1] != 'media') {
             dir.shift();
         }
-        dir.shift();
-        dir.shift();
+        dir.shift(); // /srv
+        dir.shift(); // /media
+        dir.shift(); // local repository or remote fs mount
         chain = chain.concat(dir);
         addCdsObject(obj, createContainerChain(chain));
     } 

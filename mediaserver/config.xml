@@ -73,7 +73,9 @@
         <map from="pls" to="audio/x-scpls"/>
         <map from="flv" to="video/x-flv"/>
         <map from="mkv" to="video/x-matroska"/>
-        <map from="mka" to="audio/x-matroska"/><!-- Uncomment the line below for PS3 divx support --><!-- <map from="avi" to="video/divx"/> --><!-- Uncomment the line below for D-Link DSM / ZyXEL DMA-1000 --><!-- <map from="avi" to="video/avi"/> -->
+	<map from="mka" to="audio/x-matroska"/><!-- Uncomment the line below for PS3 divx support --><!-- <map from="avi" to="video/divx"/> --><!-- Uncomment the line below for D-Link DSM / ZyXEL DMA-1000 --><!-- <map from="avi" to="video/avi"/> -->
+	<!-- Enable this when HandBrake supports webm transcoding: https://github.com/HandBrake/HandBrake/issues/388
+	<map from="iso" to="video/dvdiso"/> -->
       </extension-mimetype>
       <mimetype-upnpclass>
         <map from="audio/*" to="object.item.audioItem.musicTrack"/>
@@ -135,6 +137,10 @@
       <transcode mimetype="video/x-ms-wm" using="ffmpeg-sub"/>
       <transcode mimetype="video/x-flv" using="ffmpeg-sub"/>
       <transcode mimetype="video/x-matroska" using="ffmpeg-sub"/>
+      <!-- Chromecast needs MPEG transcoded too -->
+      <transcode mimetype="video/mpeg" using="ffmpeg-sub"/>
+      <!-- Enable this when HandBrake supports webm transcoding: https://github.com/HandBrake/HandBrake/issues/388
+      <transcode mimetype="video/dvdiso" using="ffmpeg-sub"/> -->
     </mimetype-profile-mappings>
     <profiles>
       <profile name="oggflac2raw" enabled="no" type="external">
@@ -189,7 +195,7 @@
      </profiles>
   </transcoding>
 
-  <!-- enable chromecast seeking/pausing (?) -->
+  <!-- enable seeking/pausing (but does it work with chromecast?) -->
   <protocolInfo extend="yes" />
   <custom-http-headers>
     <add header="transferMode.dlna.org: Streaming"/>

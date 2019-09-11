@@ -6,6 +6,7 @@ set -ex
 
 # The following account must exist.
 USERNAME="media"
+HOMEDIR="/srv/media"
 
 # The IP address of the I2P router.
 I2PROUTER="10.0.0.1"
@@ -71,7 +72,9 @@ iptables -A FORWARD -o ${ETH} -i ${VETH} -j ACCEPT
 ip netns exec ${NS} iptables -P INPUT ACCEPT
 ip netns exec ${NS} iptables -P FORWARD DROP
 ip netns exec ${NS} iptables -P OUTPUT DROP
+# Allow pings
 ip netns exec ${NS} iptables -A OUTPUT -p icmp -j ACCEPT
+# Allow TCP X11 traffic to the local host only
 ip netns exec ${NS} iptables -A OUTPUT -p tcp -d ${VETH_ADDR} --dport $(echo "6000 ${XDISPLAY} +p" | dc)  -j ACCEPT
 # DNS (optional, only enable for troubleshooting)
 # Rationale: Vuze doesn't need DNS when limited to using I2P and Tor (via Orchid).
@@ -96,25 +99,25 @@ ip netns exec ${NS} iptables -A OUTPUT -d 127.0.0.0/8 -j ACCEPT
 # Start up Xvfb
 echo "Waiting for Xvfb startup..."
 rm -f /tmp/.X11-unix/X${XDISPLAY}
-nohup runuser -u ${USERNAME} -- /usr/bin/xvfb-run -l -a -f /mnt/${USERNAME}/.Xauthority -n ${XDISPLAY} -s "-screen 0 1024x768x24" fluxbox > /mnt/${USERNAME}/nohup.out &
+nohup runuser -u ${USERNAME} -- /usr/bin/xvfb-run -l -a -f ${HOMEDIR}/.Xauthority -n ${XDISPLAY} -s "-screen 0 1024x768x24" fluxbox > ${HOMEDIR}/nohup.out &
 while [ ! -S "/tmp/.X11-unix/X${XDISPLAY}" ]; do sleep 1; done
 
 # Allow x0vncserver and other X clients to connect
 export DISPLAY=:${XDISPLAY}
-export XAUTHORITY=/mnt/${USERNAME}/.Xauthority
+export XAUTHORITY=${HOMEDIR}/.Xauthority
 # Only need this if UNIX socket doesn't work
 #xhost +${VPEER_ADDR}
 #export DISPLAY=${VETH_ADDR}:${XDISPLAY}
 
 # Start up x0vncserver
-nohup runuser -u ${USERNAME} -- /usr/bin/x0vncserver -display :${XDISPLAY} -rfbport $(echo "5900 ${XDISPLAY} +p" | dc) -passwordfile /mnt/${USERNAME}/.vnc/passwd >> /mnt/${USERNAME}/nohup.out &
+nohup runuser -u ${USERNAME} -- /usr/bin/x0vncserver -display :${XDISPLAY} -rfbport $(echo "5900 ${XDISPLAY} +p" | dc) -passwordfile ${HOMEDIR}/.vnc/passwd >> ${HOMEDIR}/nohup.out &
 
 # Wait for x0vncserver to quiesce (port-check if this doesn't work)
 sleep 3
 
 # Start up Vuze
 ulimit -n 16384
-nohup ip netns exec ${NS} runuser -u ${USERNAME} -- sh -c "DISPLAY=:${XDISPLAY} /usr/bin/azureus" >> /mnt/${USERNAME}/nohup.out &
+nohup ip netns exec ${NS} runuser -u ${USERNAME} -- sh -c "DISPLAY=:${XDISPLAY} /usr/bin/azureus" >> ${HOMEDIR}/nohup.out &
 
 # Launch shell in namespace (for interactive debugging)
 #ip netns exec ${NS} /bin/bash --rcfile <(echo "PS1=\"${NS}> \"")
