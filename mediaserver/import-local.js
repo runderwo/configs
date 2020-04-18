@@ -242,6 +242,9 @@ function addImage(obj)
         addCdsObject(obj, createContainerChain(chain), UPNP_CLASS_CONTAINER);
     }
 
+    print('Skipping addImage due to object_root_path undefined bug: ' + obj.location);
+    return;
+
     var dir = getRootPath(object_root_path, obj.location);
 
     if (dir.length > 0)
