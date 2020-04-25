@@ -22,6 +22,8 @@
     $Id: import.js 2081 2010-03-23 20:18:00Z lww $
 */
 
+// To lint: eslint --no-eslintrc import-local.js
+
 function addAudio(obj)
 {
  
@@ -151,7 +153,8 @@ function addVideoDefault(obj)
     var chain = new Array('Video', 'All Video');
     addCdsObject(obj, createContainerChain(chain));
 
-    var dir = getRootPath(object_root_path, obj.location);
+    // For MediaTomb, change to object_root_path instead of object_script_path.
+    var dir = getRootPath(object_script_path, obj.location);
 
     if (dir.length > 0)
     {
@@ -165,45 +168,50 @@ function addVideoDefault(obj)
 function addVideo(obj)
 {
     // Special treatment for Azureus-managed download folders.
-    if (obj.location.indexOf("/btdone/") != -1) {
-        var chain = new Array('Video', 'Torrents');
-        var dir = obj.location.split('/');
-        while (dir[0] != 'btdone') {
-            dir.shift();
-        }
-        dir.shift();
-
-        // Squash nuisance bracketed prefixes on torrented dirs.
-        dir[0] = dir[0].replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
-
-        // Squash nuisance bracketed prefixes on torrented files and UPNP metadata.
-        dir[1] = dir[1].replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
-        obj.title = obj.title.replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
-        
-        // Uppercase first letter to produce a single alphabetical container ordering.
-        dir[0] = dir[0].replace(/^\w/, function (c) { return c.toUpperCase(); });
-        dir[1] = dir[1].replace(/^\w/, function (c) { return c.toUpperCase(); });
-
-        chain = chain.concat(dir);
-        addCdsObject(obj, createContainerChain(chain));
-
-    } else if (obj.location.indexOf("/bttmp/") != -1) {
-        // Ignore incomplete Azureus downloads.
+    if (obj.location.indexOf('/bttmp/') != -1) {
+        // Ignore incomplete Vuze downloads.
         return;
     }
-    // Special treatment for anything non-Azureus-managed under /srv/media.
-    else if (obj.location.indexOf("/srv/media") != -1) {
-        var chain = new Array('Video', 'Media Server');
-        var dir = obj.location.split('/');
-        while (dir[0] != 'srv' && dir[1] != 'media') {
-            dir.shift();
+    else if (obj.location.startsWith('/srv/media')) {
+        var folder = obj.location.split('/');
+        print("Folder: " + folder.toString());
+        folder.shift();  // '^'
+        folder.shift();  // 'srv'
+        folder.shift();  // 'media'
+        folder.shift();  // NFS export
+
+        var chain = new Array('Video');
+        if (folder[0] == 'btdone') {
+            chain = chain.concat('Torrents');
+            folder.shift();  // 'btdone'
+        } else {
+            chain = chain.concat('Media Server');
         }
-        dir.shift(); // /srv
-        dir.shift(); // /media
-        dir.shift(); // local repository or remote fs mount
-        chain = chain.concat(dir);
-        addCdsObject(obj, createContainerChain(chain));
-    } 
+        print("Folder after: " + folder.toString());
+
+        // Squash nuisance bracketed prefixes in path.
+        for (var i = 0; i < folder.length; i++) {
+            folder[i] = folder[i].replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
+            // Uppercase first letter to produce a single alphabetical container ordering.
+            folder[i] = folder[i].replace(/^\w/, function (c) { return c.toUpperCase(); });
+        }
+        // Squash nuisance bracketed prefixes in title.
+        obj.title = obj.title.replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
+        // Remove suffix.
+        obj.title = obj.title.replace(/\.[^\.]*$/, '');
+
+        title = obj.title;
+        obj.title = 'Play - ' + title;
+        folder.pop();  // Remove the trailing filename since we're not using it as the title.
+        print('Adding in ' + folder.toString() + ' title ' + title + ' as ' + obj.title);
+        addCdsObject(obj, createContainerChain(chain.concat(folder).concat(title)));
+        // Add companion resume objects.
+        for (i = 1; i < 5; i++) {
+            obj.title = 'Resume ' + (i * 20) + '% - ' + title;
+            print('Adding ' + obj.location + ' with title ' + title + ' as ' + obj.title);
+            addCdsObject(obj, createContainerChain(chain.concat(folder).concat(title)));
+        }
+    }
     // Everything else.
     else {
         addVideoDefault(obj);
@@ -242,10 +250,8 @@ function addImage(obj)
         addCdsObject(obj, createContainerChain(chain), UPNP_CLASS_CONTAINER);
     }
 
-    print('Skipping addImage due to object_root_path undefined bug: ' + obj.location);
-    return;
-
-    var dir = getRootPath(object_root_path, obj.location);
+    // For MediaTomb, change to object_root_path instead of object_script_path.
+    var dir = getRootPath(object_script_path, obj.location);
 
     if (dir.length > 0)
     {
@@ -346,10 +352,7 @@ if (getPlaylistType(orig.mimetype) == '')
     
     if (mime == 'audio')
     {
-        if (obj.onlineservice == ONLINE_SERVICE_WEBORAMA)
-            addWeborama(obj);
-        else
-            addAudio(obj);
+        addAudio(obj);
     }
     
     if (mime == 'video')
@@ -375,3 +378,5 @@ if (getPlaylistType(orig.mimetype) == '')
             addAudio(obj);
     }
 }
+
+// vim: sw=4:ts=4:et

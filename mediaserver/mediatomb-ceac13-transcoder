@@ -136,6 +136,28 @@ truncate -s 0 ${log_file}
 
 echo "$*" >> ${log_file}
 
+title=$3
+resume_cmd=( )
+if [ ! -z "$(echo $title | grep '^Resume [0-9]*% - ')" ]; then
+	echo "Resume debugging: " >> ${log_file}
+	resume_percent=$(echo $title | sed 's/^Resume \([0-9]*\)% - .*$/\1/')
+	echo ${resume_percent} >> ${log_file}
+	resume_ratio=$(echo "${resume_percent} 2k 100 / p" | dc)
+	echo ${resume_ratio} >> ${log_file}
+	total_secs=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${video}")
+	echo ${total_secs} >> ${log_file}
+	resume_secs=$(echo "${total_secs} ${resume_ratio} 2k * p" | dc)
+	echo ${resume_secs} >> ${log_file}
+	resume_s=$(echo "${resume_secs} 60 % p" | dc)
+	echo ${resume_s} >> ${log_file}
+	resume_m=$(echo "${resume_secs} 3600 % 60 / p" | dc)
+	echo ${resume_m} >> ${log_file}
+	resume_h=$(echo "${resume_secs} 3600 / p" | dc)
+	echo ${resume_h} >> ${log_file}
+	resume_cmd=( -ss $(echo ${resume_h}:${resume_m}:${resume_s}) )
+	echo "Resuming with ${resume_cmd[@]} (${resume_secs} secs)" >> ${log_file}
+fi
+
 width_filter=( )
 stream_width=$(echo ${video_stream_0} | sed 's/^.* \([0-9]\+\)x\([0-9]\+\) .*$/\1/')
 if [ "${stream_width}" -gt "${max_width}" ]; then
@@ -232,7 +254,7 @@ elif [ ${video##*.} == webm ]; then
 else
     # Always transcode the first video and first audio stream for the above configured language.
     IFS=  # Don't tokenize subargs.
-    ffmpeg -y ${hw_accel[@]} -i "${video}" -rtbufsize 100M -map v:0? -map a:${language_audio}? ${subtitle_map} -c:v libvpx -b:v ${bitrate} ${width_filter[@]} -crf ${quality} -threads ${numcores} -quality realtime -cpu-used ${cpu_used} ${subopt} ${subargs} -c:a libvorbis -ar 48000 -ac 2 -aq 7 ${audiofilter} ${audiofilter_arg} -f webm - >"$2" 2>>"${log_file}"
+    ffmpeg -y ${hw_accel[@]} ${resume_cmd[@]} -i "${video}" -rtbufsize 100M -map v:0? -map a:${language_audio}? ${subtitle_map} -c:v libvpx -b:v ${bitrate} ${width_filter[@]} -crf ${quality} -threads ${numcores} -quality realtime -cpu-used ${cpu_used} ${subopt} ${subargs} -c:a libvorbis -ar 48000 -ac 2 -aq 7 ${audiofilter} ${audiofilter_arg} -f webm - >"$2" 2>>"${log_file}"
 
     # Debugging
     #ffmpeg -y -i "${video}" -map v:0:0 -map a:0:0 -vcodec libvpx -b:v 4096k ${subopt} ${subargs} -acodec libvorbis -ar 48000 -ac 2 -ab 448000 -af volume=3 -threads ${numcores} -deadline realtime -rtbufsize 100M -f webm -t 600 - | LC_COLLATE=null sed -r 's/(\x18\x53\x80\x67\x01)[\x00-\xff]{7}/\1\x00\x00\x00\x05\xf5\xe1\x00/' | LC_COLLATE=null sed -r 's/\x50(\*\xd7\xb1\x83[\x00-\xff]{3})/\x57\1\x44\x89\x84\x4a\x64\x0f\x3a/' > "$2"
