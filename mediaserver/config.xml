@@ -1,39 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<config version="2" xmlns="http://mediatomb.cc/config/2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://mediatomb.cc/config/2 http://mediatomb.cc/config/2.xsd"><!--
-     Read /usr/share/doc/mediatomb-common/README.gz section 6 for more
+<config version="2" xmlns="http://mediatomb.cc/config/2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://mediatomb.cc/config/2 http://mediatomb.cc/config/2.xsd">
+  <!--
+     See http://gerbera.io or read the docs for more
      information on creating and using config.xml configration files.
     -->
   <server>
     <ui enabled="yes" show-tooltips="yes">
-      <accounts enabled="yes" session-timeout="30">
+      <accounts enabled="no" session-timeout="30">
         <account user="media" password="media"/>
       </accounts>
     </ui>
-    <name>MediaTomb</name>
-    <udn>uuid:61449535-e4be-4306-b79d-1815fb5f30bd</udn>
-    <home>/var/lib/mediatomb</home>
-    <webroot>/usr/share/mediatomb/web</webroot>
-    <storage caching="yes">
+    <name>Gerbera</name>
+    <udn>uuid:bf019d81-c71f-4436-89bd-981dbe1201c0</udn>
+    <home>/var/lib/gerbera/.config/gerbera</home>
+    <webroot>/usr/share/gerbera/web</webroot>
+    <!--
+        How frequently (in seconds) to send ssdp:alive advertisements.
+        Minimum alive value accepted is: 62
+
+        The advertisement will be sent every (A/2)-30 seconds,
+        and will have a cache-control max-age of A where A is
+        the value configured here. Ex: A value of 62 will result
+        in an SSDP advertisement being sent every second.
+    -->
+    <alive>1800</alive>
+    <storage>
       <sqlite3 enabled="yes">
-        <database-file>mediatomb.db</database-file>
+        <database-file>gerbera.db</database-file>
       </sqlite3>
       <mysql enabled="no">
         <host>localhost</host>
-        <username>mediatomb</username>
-        <database>mediatomb</database>
+        <username>gerbera</username>
+        <database>gerbera</database>
       </mysql>
     </storage>
-    <protocolInfo extend="no"/><!-- For PS3 support change to "yes" --><!--
+    <!-- <protocolInfo extend="yes" dlna-seek="yes"/> --> <!-- For PS3 support change to "yes" -->
+
+    <!-- enable seeking/pausing (but does it work with chromecast?)
+    <custom-http-headers>
+      <add header="transferMode.dlna.org: Streaming"/>
+      <add header="contentFeatures.dlna.org: DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000"/>
+    </custom-http-headers>
+    -->
+
+    <!--
        Uncomment the lines below to get rid of jerky avi playback on the
        DSM320 or to enable subtitles support on the DSM units
-    --><!--
+    -->
+    <!--
     <custom-http-headers>
       <add header="X-User-Agent: redsonic"/>
     </custom-http-headers>
 
     <manufacturerURL>redsonic.com</manufacturerURL>
     <modelNumber>105</modelNumber>
-    --><!-- Uncomment the line below if you have a Telegent TG100 --><!--
+    -->
+    <!-- Uncomment the line below if you have a Telegent TG100 -->
+    <!--
        <upnp-string-limit>101</upnp-string-limit>
     -->
     <extended-runtime-options>
@@ -42,25 +65,33 @@
         <seek-percentage>5</seek-percentage>
         <filmstrip-overlay>yes</filmstrip-overlay>
         <workaround-bugs>no</workaround-bugs>
+        <image-quality>8</image-quality>
       </ffmpegthumbnailer>
       <mark-played-items enabled="no" suppress-cds-updates="yes">
         <string mode="prepend">*</string>
+        <mark>
+          <content>video</content>
+        </mark>
       </mark-played-items>
     </extended-runtime-options>
   </server>
   <import hidden-files="no">
     <scripting script-charset="UTF-8">
-      <common-script>/usr/share/mediatomb/js/common.js</common-script>
-      <playlist-script>/usr/share/mediatomb/js/playlists.js</playlist-script>
+      <common-script>/usr/share/gerbera/js/common.js</common-script>
+      <playlist-script>/usr/share/gerbera/js/playlists.js</playlist-script>
       <virtual-layout type="js">
-        <import-script>/usr/share/mediatomb/js/import-local.js</import-script>
-        <dvd-script>/usr/share/mediatomb/js/import-dvd.js</dvd-script>
+        <import-script>/usr/local/etc/github/mediaserver/import-local.js</import-script>
+        <dvd-script>/usr/share/gerbera/js/import-dvd.js</dvd-script>
       </virtual-layout>
     </scripting>
     <mappings>
       <extension-mimetype ignore-unknown="no">
         <map from="mp3" to="audio/mpeg"/>
-        <map from="ogg" to="application/ogg"/>
+        <map from="ogx" to="application/ogg"/>
+        <map from="ogv" to="video/ogg"/>
+        <map from="oga" to="audio/ogg"/>
+        <map from="ogg" to="audio/ogg"/>
+        <map from="ogm" to="video/ogg"/>
         <map from="asf" to="video/x-ms-asf"/>
         <map from="asx" to="video/x-ms-asf"/>
         <map from="wma" to="audio/x-ms-wma"/>
@@ -73,9 +104,16 @@
         <map from="pls" to="audio/x-scpls"/>
         <map from="flv" to="video/x-flv"/>
         <map from="mkv" to="video/x-matroska"/>
-	<map from="mka" to="audio/x-matroska"/><!-- Uncomment the line below for PS3 divx support --><!-- <map from="avi" to="video/divx"/> --><!-- Uncomment the line below for D-Link DSM / ZyXEL DMA-1000 --><!-- <map from="avi" to="video/avi"/> -->
-	<!-- Enable this when HandBrake supports webm transcoding: https://github.com/HandBrake/HandBrake/issues/388
-	<map from="iso" to="video/dvdiso"/> -->
+        <map from="mka" to="audio/x-matroska"/>
+        <map from="dsf" to="audio/x-dsd"/>
+        <map from="dff" to="audio/x-dsd"/>
+        <map from="wv" to="audio/x-wavpack"/>
+        <!-- Uncomment the line below for PS3 divx support -->
+        <!-- <map from="avi" to="video/divx"/> -->
+        <!-- Uncomment the line below for D-Link DSM / ZyXEL DMA-1000 -->
+        <!-- <map from="avi" to="video/avi"/> -->
+        <!-- Enable this when HandBrake supports webm transcoding: https://github.com/HandBrake/HandBrake/issues/388
+        <map from="iso" to="video/dvdiso"/> -->
       </extension-mimetype>
       <mimetype-upnpclass>
         <map from="audio/*" to="object.item.audioItem.musicTrack"/>
@@ -86,7 +124,11 @@
       <mimetype-contenttype>
         <treat mimetype="audio/mpeg" as="mp3"/>
         <treat mimetype="application/ogg" as="ogg"/>
+        <treat mimetype="audio/ogg" as="ogg"/>
         <treat mimetype="audio/x-flac" as="flac"/>
+        <treat mimetype="audio/flac" as="flac"/>
+        <treat mimetype="audio/x-ms-wma" as="wma"/>
+        <treat mimetype="audio/x-wavpack" as="wv"/>
         <treat mimetype="image/jpeg" as="jpg"/>
         <treat mimetype="audio/x-mpegurl" as="playlist"/>
         <treat mimetype="audio/x-scpls" as="playlist"/>
@@ -99,35 +141,26 @@
         <treat mimetype="application/x-iso9660-image" as="dvd"/>
         <treat mimetype="video/x-matroska" as="mkv"/>
         <treat mimetype="audio/x-matroska" as="mka"/>
+        <treat mimetype="audio/x-dsd" as="dsd"/>
       </mimetype-contenttype>
     </mappings>
-    <online-content><!-- Make sure to setup a transcoding profile for flv -->
-      <YouTube enabled="no" refresh="28800" update-at-start="no" purge-after="604800" racy-content="exclude" format="flv" hd="no">
-        <favorites user="mediatomb"/>
-        <standardfeed feed="most_viewed" time-range="today"/>
-        <playlists user="mediatomb"/>
-        <uploads user="mediatomb"/>
-        <standardfeed feed="recently_featured" time-range="today"/>
-      </YouTube>
-      <Weborama enabled="no" refresh="28800" update-at-start="no">
-        <playlist name="Active" type="playlist" mood="active"/>
-        <playlist name="Metal" type="playlist">
-          <filter>
-            <genres>metal</genres>
-          </filter>
-        </playlist>
-      </Weborama>
+    <online-content>
       <AppleTrailers enabled="no" refresh="43200" update-at-start="no" resolution="640"/>
     </online-content>
+    <autoscan use-inotify="auto">
+      <directory level="basic" location="/srv/media/local" mode="inotify" recursive="yes" hidden-files="no"/>
+      <directory level="basic" location="/srv/media/valhalla" mode="timed" interval="14400" recursive="yes" hidden-files="no"/>
+    </autoscan>
   </import>
   <transcoding enabled="yes">
     <mimetype-profile-mappings>
-      <transcode mimetype="video/x-flv" using="video-common"/>
+      <transcode mimetype="video/x-flv" using="ffmpeg-sub"/>
       <transcode mimetype="application/ogg" using="vlcmpeg"/>
+      <transcode mimetype="audio/ogg" using="ogg2mp3"/>
       <transcode mimetype="application/ogg" using="oggflac2raw"/>
       <transcode mimetype="audio/x-flac" using="audio-common"/>
-      <transcode mimetype="video/divx" using="video-common"/>
-      <transcode mimetype="video/x-matroska" using="transcode-matroska"/>
+      <transcode mimetype="video/divx" using="ffmpeg-sub"/>
+      <transcode mimetype="video/x-matroska" using="ffmpeg-sub"/>
       <transcode mimetype="video/mp4" using="ffmpeg-sub"/>
       <transcode mimetype="video/x-msvideo" using="ffmpeg-sub"/>
       <transcode mimetype="video/ogg" using="ffmpeg-sub"/>
@@ -143,12 +176,12 @@
       <transcode mimetype="video/dvdiso" using="ffmpeg-sub"/> -->
     </mimetype-profile-mappings>
     <profiles>
-      <profile name="oggflac2raw" enabled="no" type="external">
-        <mimetype>audio/L16</mimetype>
+      <profile name="ogg2mp3" enabled="no" type="external">
+        <mimetype>audio/mpeg</mimetype>
         <accept-url>no</accept-url>
         <first-resource>yes</first-resource>
         <accept-ogg-theora>no</accept-ogg-theora>
-        <agent command="ogg123" arguments="-d raw -o byteorder:big -f %out %in"/>
+        <agent command="ffmpeg" arguments="-y -i %in -f mp3 %out"/>
         <buffer size="1048576" chunk-size="131072" fill-size="262144"/>
       </profile>
       <profile name="vlcmpeg" enabled="no" type="external">
@@ -159,46 +192,23 @@
         <agent command="vlc" arguments="-I dummy %in --sout #transcode{venc=ffmpeg,vcodec=mp2v,vb=4096,fps=25,aenc=ffmpeg,acodec=mpga,ab=192,samplerate=44100,channels=2}:standard{access=file,mux=ps,dst=%out} vlc:quit"/>
         <buffer size="14400000" chunk-size="512000" fill-size="120000"/>
       </profile>
-      <profile name="video-common" enabled="yes" type="external">
-        <mimetype>video/mpeg</mimetype>
-        <accept-url>yes</accept-url>
-        <first-resource>yes</first-resource>
-        <accept-ogg-theora>yes</accept-ogg-theora>
-        <agent command="mediatomb-transcode" arguments="-i %in -o %out --video-common"/>
-        <buffer size="14400000" chunk-size="512000" fill-size="120000"/>
-      </profile>
       <profile name="audio-common" enabled="yes" type="external">
         <mimetype>audio/wav</mimetype>
         <accept-url>no</accept-url>
         <first-resource>yes</first-resource>
         <accept-ogg-theora>no</accept-ogg-theora>
-        <agent command="mediatomb-transcode" arguments="-i %in -o %out --audio-common"/>
+        <agent command="gerbera-transcode" arguments="-i %in -o %out --audio-common"/>
         <buffer size="1048576" chunk-size="131072" fill-size="262144"/>
-      </profile>
-      <profile name="transcode-matroska" enabled="yes" type="external">
-        <mimetype>video/mpeg</mimetype>
-        <accept-url>yes</accept-url>
-        <first-resource>yes</first-resource>
-        <accept-ogg-theora>yes</accept-ogg-theora>
-        <agent command="mediatomb-transcode" arguments="-i %in -o %out --transcode-matroska"/>
-        <buffer size="14400000" chunk-size="512000" fill-size="120000"/>
       </profile>
       <profile name="ffmpeg-sub" enabled="yes" type="external">
         <mimetype>video/webm</mimetype>
         <accept-url>yes</accept-url>
         <first-resource>yes</first-resource>
         <accept-ogg-theora>yes</accept-ogg-theora>
-        <agent command="/usr/local/bin/mediatomb-ceac13-transcoder" can-seek="yes" arguments='%in %out'/>
+        <agent command="/usr/local/bin/mediatomb-ceac13-transcoder" can-seek="yes" arguments='%in %out %title %range'/>
         <buffer size="147483648" chunk-size="512000" fill-size="2048000"/>
         <use-chunked-encoding>no</use-chunked-encoding>
       </profile>
-     </profiles>
+    </profiles>
   </transcoding>
-
-  <!-- enable seeking/pausing (but does it work with chromecast?) -->
-  <protocolInfo extend="yes" />
-  <custom-http-headers>
-    <add header="transferMode.dlna.org: Streaming"/>
-    <add header="contentFeatures.dlna.org: DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000"/>
-  </custom-http-headers>
 </config>
