@@ -150,6 +150,8 @@
     <autoscan use-inotify="auto">
       <directory level="basic" location="/srv/media/local" mode="inotify" recursive="yes" hidden-files="no"/>
       <directory level="basic" location="/srv/media/valhalla" mode="timed" interval="14400" recursive="yes" hidden-files="no"/>
+      <directory level="basic" location="/afs/icequake.net/pub/music" mode="timed" interval="36400" recursive="yes" hidden-files="no"/>
+      <directory level="basic" location="/afs/icequake.net/pub/video" mode="timed" interval="36400" recursive="yes" hidden-files="no"/>
     </autoscan>
   </import>
   <transcoding enabled="yes">

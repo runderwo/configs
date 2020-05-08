@@ -159,7 +159,7 @@ if [ ! -z "$(echo $title | grep '^Resume [0-9]*% - ')" ]; then
 fi
 
 width_filter=( )
-stream_width=$(echo ${video_stream_0} | sed 's/^.* \([0-9]\+\)x\([0-9]\+\) .*$/\1/')
+stream_width=$(echo ${video_stream_0} | sed 's/^.* \([0-9]\+\)x\([0-9]\+\)[, ] .*$/\1/')
 if [ "${stream_width}" -gt "${max_width}" ]; then
 	width_filter=( -filter:v scale=${target_width}:-1 )
 fi

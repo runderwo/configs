@@ -172,18 +172,20 @@ function addVideo(obj)
         // Ignore incomplete Vuze downloads.
         return;
     }
-    else if (obj.location.startsWith('/srv/media')) {
+    else if (obj.location.startsWith('/srv/media') || obj.location.startsWith('/afs/')) {
         var folder = obj.location.split('/');
         print("Folder: " + folder.toString());
         folder.shift();  // '^'
-        folder.shift();  // 'srv'
-        folder.shift();  // 'media'
-        folder.shift();  // NFS export
+        folder.shift();  // 'srv' / 'afs'
+        folder.shift();  // 'media' / 'root.cell'
+        folder.shift();  // NFS export / 'pub'
 
         var chain = new Array('Video');
         if (folder[0] == 'btdone') {
             chain = chain.concat('Torrents');
             folder.shift();  // 'btdone'
+        } else if (obj.location.startsWith('/afs/')) {
+            chain = chain.concat('AFS');
         } else {
             chain = chain.concat('Media Server');
         }
