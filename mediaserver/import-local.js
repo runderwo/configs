@@ -191,14 +191,22 @@ function addVideo(obj)
         }
         print("Folder after: " + folder.toString());
 
-        // Squash nuisance bracketed prefixes in path.
+        // Clean up UPnP folder tree.
         for (var i = 0; i < folder.length; i++) {
+            // Squash nuisance bracketed prefixes.
             folder[i] = folder[i].replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
+            // Squash leading whitespace.
+            folder[i] = folder[i].replace(/^\s*/, '');
             // Uppercase first letter to produce a single alphabetical container ordering.
             folder[i] = folder[i].replace(/^\w/, function (c) { return c.toUpperCase(); });
         }
         // Squash nuisance bracketed prefixes in title.
+        oldTitle = obj.title;
         obj.title = obj.title.replace(/^\[[^\]]*\][^A-Za-z0-9]*/, '');
+        // Unless only the extension would remain.
+        if (obj.title.match('^\.[^\.]*$')) {
+            obj.title = oldTitle;
+        }
         // Remove suffix.
         obj.title = obj.title.replace(/\.[^\.]*$/, '');
 

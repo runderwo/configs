@@ -109,6 +109,10 @@ numcores=$(nproc --all)
 # With threads, the calculation is rather confusing.  We get best results setting this to (16 / number of cores).
 cpu_used=$((16 / ${numcores}))
 
+# Playback buffer size. Too small will risk hiccups during playback.
+# Too big will cause the client to time out waiting to begin playback (Chromecast is impatient for example).
+rtbufsize=50M
+
 # Target bitrate; Google Cast extension suggests Standard (1700k), High (3000k), Extreme (5000k).
 bitrate=1700k
 
@@ -254,7 +258,7 @@ elif [ ${video##*.} == webm ]; then
 else
     # Always transcode the first video and first audio stream for the above configured language.
     IFS=  # Don't tokenize subargs.
-    ffmpeg -y ${hw_accel[@]} ${resume_cmd[@]} -i "${video}" -rtbufsize 100M -map v:0? -map a:${language_audio}? ${subtitle_map} -c:v libvpx -b:v ${bitrate} ${width_filter[@]} -crf ${quality} -threads ${numcores} -quality realtime -cpu-used ${cpu_used} ${subopt} ${subargs} -c:a libvorbis -ar 48000 -ac 2 -aq 7 ${audiofilter} ${audiofilter_arg} -f webm - >"$2" 2>>"${log_file}"
+    ffmpeg -y ${hw_accel[@]} ${resume_cmd[@]} -i "${video}" -rtbufsize ${rtbufsize} -map v:0? -map a:${language_audio}? ${subtitle_map} -c:v libvpx -b:v ${bitrate} ${width_filter[@]} -crf ${quality} -threads ${numcores} -quality realtime -cpu-used ${cpu_used} ${subopt} ${subargs} -c:a libvorbis -ar 48000 -ac 2 -aq 7 ${audiofilter} ${audiofilter_arg} -f webm - >"$2" 2>>"${log_file}"
 
     # Debugging
     #ffmpeg -y -i "${video}" -map v:0:0 -map a:0:0 -vcodec libvpx -b:v 4096k ${subopt} ${subargs} -acodec libvorbis -ar 48000 -ac 2 -ab 448000 -af volume=3 -threads ${numcores} -deadline realtime -rtbufsize 100M -f webm -t 600 - | LC_COLLATE=null sed -r 's/(\x18\x53\x80\x67\x01)[\x00-\xff]{7}/\1\x00\x00\x00\x05\xf5\xe1\x00/' | LC_COLLATE=null sed -r 's/\x50(\*\xd7\xb1\x83[\x00-\xff]{3})/\x57\1\x44\x89\x84\x4a\x64\x0f\x3a/' > "$2"
