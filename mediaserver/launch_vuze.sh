@@ -117,7 +117,7 @@ sleep 3
 
 # Start up Vuze
 ulimit -n 16384
-nohup ip netns exec ${NS} runuser -u ${USERNAME} -- sh -c "DISPLAY=:${XDISPLAY} /usr/bin/azureus" >> ${HOMEDIR}/nohup.out 2>&1 &
+nohup ip netns exec ${NS} runuser -u ${USERNAME} -- sh -c "DISPLAY=:${XDISPLAY} nice -n 10 /usr/bin/azureus" >> ${HOMEDIR}/nohup.out 2>&1 &
 
 # Launch shell in namespace (for interactive debugging)
 #ip netns exec ${NS} /bin/bash --rcfile <(echo "PS1=\"${NS}> \"")
