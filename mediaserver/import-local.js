@@ -210,14 +210,14 @@ function addVideo(obj)
         // Remove suffix.
         obj.title = obj.title.replace(/\.[^\.]*$/, '');
 
-        title = obj.title;
-        obj.title = 'Play - ' + title;
         folder.pop();  // Remove the trailing filename since we're not using it as the title.
-        print('Adding in ' + folder.toString() + ' title ' + title + ' as ' + obj.title);
-        addCdsObject(obj, createContainerChain(chain.concat(folder).concat(title)));
-        // Add companion resume objects.
+        print('Adding in ' + folder.toString() + ' as ' + obj.title);
+        addCdsObject(obj, createContainerChain(chain.concat(folder)));
+        // Add companion resume objects in an alternate-path container named after the target object.
+        folder.unshift('000.Resume.000');
+        title = obj.title;
         for (i = 1; i < 5; i++) {
-            obj.title = 'Resume ' + (i * 20) + '% - ' + title;
+            obj.title = (i * 20) + '% - ' + title;
             print('Adding ' + obj.location + ' with title ' + title + ' as ' + obj.title);
             addCdsObject(obj, createContainerChain(chain.concat(folder).concat(title)));
         }
