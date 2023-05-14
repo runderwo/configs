@@ -74,27 +74,43 @@ ip netns exec ${NS} iptables -P FORWARD DROP
 ip netns exec ${NS} iptables -P OUTPUT DROP
 # Allow pings
 ip netns exec ${NS} iptables -A OUTPUT -p icmp -j ACCEPT
+# Unblock link-local origin or destination traffic
+ip netns exec ${NS} iptables -A OUTPUT -s 127.0.0.0/8 -j ACCEPT
+ip netns exec ${NS} iptables -A OUTPUT -d 127.0.0.0/8 -j ACCEPT
 # Allow TCP X11 traffic to the local host only
 ip netns exec ${NS} iptables -A OUTPUT -p tcp -d ${VETH_ADDR} --dport $(echo "6000 ${XDISPLAY} +p" | dc)  -j ACCEPT
-# DNS (optional, only enable for troubleshooting)
-# Rationale: Vuze doesn't need DNS when limited to using I2P and Tor (via Orchid).
-# 1. Public tracker scrapes will go through Tor via I2P SOCKS proxy and Orchid.
+###
+# Public DNS (optional, only enable for troubleshooting)
+# Rationale: Vuze doesn't need DNS when limited to using I2P and Tor (via hidden service outproxy).
+# 1. Public tracker scrapes will go through the local Tor client via the I2P SOCKS outproxy.
 # 2. Although Tor cannot route UDP packets, Tor exit node will resolve public DNS for HTTP requests.
 # 3. All peer communication in this configuration is done via 1) I2P or Tor onion address or 2) public IP address, not DNS name.
-# Blocking DNS prevents Vuze discovering its external IP address via a public
+# Blocking DNS prevents Vuze discovering its own external IP address via a public
 # DNS query and then potentially leaking it.
+###
 #ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p udp --dport 53 -j ACCEPT
 # I2P I2CP (for I2P DHT)
 ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p tcp --dport 7654 -j ACCEPT
 # I2P router console
 ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p tcp --dport 7657 -j ACCEPT
-# I2P SOCKS
-ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p tcp --dport 14447 -j ACCEPT
-ip netns exec ${NS} iptables -A OUTPUT -s 127.0.0.0/8 -j ACCEPT
-ip netns exec ${NS} iptables -A OUTPUT -d 127.0.0.0/8 -j ACCEPT
-# I2P HTTP/HTTPS proxy (not sure this is needed - remove if not)
+###
+# I2P SOCKS proxy
+# This will allow access to i2p trackers via HTTP/S as well as forward internet requests
+# to the Tor SOCKS proxy via the i2p hidden service.  The HTTP/S proxies on port 4444
+# and 4445 and their default public i2p exit nodes should be unnecessary.
+###
 #ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p tcp --dport 4444 -j ACCEPT
 #ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p tcp --dport 4445 -j ACCEPT
+ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p tcp --dport 4446 -j ACCEPT
+###
+# The following is necessary to use Tor directly instead of as a i2p outproxy, in case
+# that configuration is not working for some reason.
+###
+# TOR SOCKS port running on the I2P host
+#ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p tcp --dport 9050 -j ACCEPT
+# TOR DNS (obfuscated substitute for public DNS above)
+ip netns exec ${NS} iptables -A OUTPUT -d ${I2PROUTER} -p udp --dport 9053 -j ACCEPT
+ip netns exec ${NS} iptables -t nat -A OUTPUT -d ${I2PROUTER} -p udp --dport 53 -j DNAT --to ${I2PROUTER}:9053
 
 # Start up Xvfb
 echo "Waiting for Xvfb startup..."
